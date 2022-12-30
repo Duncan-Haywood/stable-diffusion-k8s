@@ -1,0 +1,17 @@
+gitops:
+  manifest_projects:
+  - id: gitlab-org/cluster-integration/gitlab-agent
+    ref: # either `branch`, `tag` or `commit` can be specified
+      branch: v1
+
+    default_namespace: default
+    paths:
+      # If 'paths' is not specified or is an empty list, the configuration below is used.
+    - glob: '/infrastructure/**/*.{yaml,yml,json}'
+    reconcile_timeout: 3600s
+    dry_run_strategy: none
+    prune: true
+    prune_timeout: 3600s
+    prune_propagation_policy: foreground
+    inventory_policy: must_match
+
