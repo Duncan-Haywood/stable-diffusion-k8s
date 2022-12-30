@@ -1,8 +1,6 @@
 gitops:
   manifest_projects:
-  - id: gitlab-org/cluster-integration/gitlab-agent
-    ref: # either `branch`, `tag` or `commit` can be specified
-      branch: v1
+  # - id: gitlab-org/cluster-integration/gitlab-agent
 
     default_namespace: default
     paths:
