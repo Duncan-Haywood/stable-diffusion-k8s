@@ -1,19 +1,45 @@
-include:
-  - template: Terraform.gitlab-ci.yml
-
-variables:
-  TF_STATE_NAME: default
-  TF_ROOT: infrastructure
+image: docker:latest
 
 stages:
-   - init
-   - validate
-   - test
-   - build
-   - deploy
-   - cleanup
+  - create
+  - build
+  - deploy
+  - cleanup
 
-destroy:
-  extends: .terraform:destroy
-  needs: []
+variables:
+  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+  AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+
+create:
+  stage: create
+  script:
+    - apt-get update -yqq && apt-get install -yqq awscli
+    - aws eks create-cluster --name my-eks-cluster --role-arn my-iam-role-arn --resources-vpc-config subnetIds=subnet-1,subnet-2,securityGroupIds=sg-1
+    - aws eks update-kubeconfig --name my-eks-cluster
+  when: manual
+
+
+build:
+  stage: build
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$IMAGE_TAG .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:$IMAGE_TAG
+
+deploy:
+  stage: deploy
+  script:
+    - echo Deploying to EKS
+    - apt-get update -yqq && apt-get install -yqq awscli
+    - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+    - kubectl apply -f kubernetes.yaml
+
+cleanup:
+  stage: cleanup
+  script:
+    - echo Cleaning up EKS cluster
+    - aws eks delete-cluster --name my-eks-cluster
+  when: manual
 
